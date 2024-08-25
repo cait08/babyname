@@ -1,40 +1,22 @@
-
-import { Chainer } from "./classes/Chainer";
-
 import fs from 'fs';
-
 import Papa from 'papaparse';
-
-
+import { ChainNode } from './classes/ChainNode';
 
 async function setup() {
+  const file = './data/yob1986.txt';
 
+  const csvText = fs.readFileSync(file);
 
-    console.log('hello world');
+  const data = Papa.parse(csvText.toString());
 
-    const file = './data/yob1880.txt';
+  const names = data.data.map((d: any) => {
+    return d[0];
+  });
 
-    console.log(file);
+  // Root node
+  const root = new ChainNode('');
 
-
-    const csvText = fs.readFileSync(file);
-
-    const data = Papa.parse(csvText.toString());
-
-
-    const names = data.data.map((d: any) => {
-        return d[0]
-    });
-
-    
-
-    const chainer = new Chainer();
-
-    names.slice(0, 10).forEach(name => chainer.addText(name));
-
-    console.log(chainer);
-
-
+  names.slice(0, 20).forEach((name) => root.addText(name));
 }
 
 setup();
