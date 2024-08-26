@@ -1,58 +1,88 @@
+import { splitIntoPhonemes } from './SplitPhonemes';
+
 export class ChainNode {
-  weight = 0;
-  nodes = new Map<string, ChainNode>();
+  nodes: Record<string, ChainNode> = {};
 
-  public text = '';
+  text: string = '';
 
-  constructor(text: string = '') {
-    const parts = this.classify(text.toLowerCase());
+  constructor(
+    text: string,
+    public depth: number,
+    public parent?: ChainNode
+  ) {
+    const items = this.classify(text);
 
-    if (!parts.length) {
+    this.text = items.shift()!;
+
+    if (!this.text) {
+      this.text = '';
+    }
+
+    if (!items.length) {
       return;
     }
 
-    // Get the root of the text that constructed this
-    const root = parts.shift();
+    const remainder = items.join('');
 
-    // Save it with the class instance
-    this.text = root!;
+    this.addText(remainder);
+  }
 
-    this.addText(parts.join(''));
+  get hasNodes(): boolean {
+    return Object.keys(this.nodes).length > 0;
   }
 
   addText(text: string) {
-    this.weight++;
-    const parts = this.classify(text.toLowerCase());
-
-    if (!parts.length) {
+    if (!text) {
       return;
     }
 
-    // For example, the first letter
-    const root = parts.shift();
+    const items = this.classify(text);
 
-    this.nodes.set(root!, new ChainNode(parts.join('')));
+    if (!items.length) {
+      return;
+    }
+
+    const root = items.shift();
+
+    const remainder = items.join('');
+
+    if (!this.nodes[root!]) {
+      this.nodes[root!] = new ChainNode(text, this.depth + 1, this);
+    } else {
+      this.nodes[root!].addText(remainder);
+    }
+  }
+
+  getText(text: string = '') {
+    if (Math.random() > 0.95) {
+      return this.getParent(100).getText(text);
+    }
+
+    if (!this.hasNodes) {
+      return `${text}${this.text}`;
+    }
+
+    const items = Object.keys(this.nodes).map((key) => this.nodes[key]);
+    const randomNode = items[Math.floor(Math.random() * items.length)];
+
+    const newText = `${text}${this.text}`;
+
+    return randomNode.getText(newText);
+  }
+
+  getParent(height: number = 1) {
+    if (!this.parent) {
+      return this;
+    }
+
+    if (!height) {
+      return this;
+    }
+
+    return this.parent.getParent(height - 1);
   }
 
   classify(text: string): string[] {
-    return text.split('');
-  }
-
-  getText(textSoFar: string): string {
-    console.log(`Text so far: ${textSoFar}`);
-    // Handle the end of the string
-    if (!this.nodes.size) {
-      console.log('reached end of chain');
-      return textSoFar;
-    }
-
-    const nodes = Array.from(this.nodes.entries()).map((e) => e[1]);
-    console.log(nodes);
-
-    // Pick a random node under this node
-    const items = Array.from(this.nodes.entries()).map((i) => i[1]);
-    const node = items[Math.floor(Math.random() * items.length)];
-
-    return node.getText(`${textSoFar}${this.text}`);
+    return splitIntoPhonemes(text.toLowerCase());
   }
 }
